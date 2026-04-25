@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP API Docs</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f7fb;
+            color: #162033;
+        }
+
+        .page {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 32px 20px 64px;
+        }
+
+        .hero,
+        .card,
+        .endpoint {
+            background: #fff;
+            border: 1px solid #dbe3f0;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
+        }
+
+        .hero {
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            margin: 32px 0 16px;
+            font-size: 22px;
+        }
+
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid.cols-2 {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+
+        .endpoint {
+            margin-bottom: 16px;
+        }
+
+        .endpoint-head {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 12px;
+        }
+
+        .method,
+        .tag {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 12px;
+            font-weight: 700;
+        }
+
+        .method {
+            color: #fff;
+        }
+
+        .get { background: #2563eb; }
+        .post { background: #16a34a; }
+        .put { background: #d97706; }
+        .delete { background: #dc2626; }
+
+        .tag {
+            background: #eef2ff;
+            color: #4338ca;
+        }
+
+        code,
+        pre {
+            font-family: Consolas, monospace;
+        }
+
+        pre {
+            overflow: auto;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+
+        ul {
+            margin: 0;
+            padding-left: 18px;
+        }
+
+        .toc {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .toc a {
+            color: #1d4ed8;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <main class="page">
+        <section class="hero">
+            <p><strong>UCEBUL ERP API</strong></p>
+            <h1>MVP Contratos y Otrosíes</h1>
+            <p>Documentación base de la API Laravel para terceros, contratos, otrosíes, documentos, aprobaciones, comentarios y flujos bajo el prefijo <code>/api/erp</code>.</p>
+            <div class="toc">
+                <a href="#general">General</a>
+                <a href="#third-parties">Terceros</a>
+                <a href="#contracts">Contratos</a>
+                <a href="#addendums">Otrosíes</a>
+                <a href="#documents">Documentos</a>
+                <a href="#approvals">Aprobaciones</a>
+                <a href="#comments">Comentarios</a>
+                <a href="#workflows">Flujos</a>
+            </div>
+        </section>
+
+        <h2 id="general" class="section-title">General</h2>
+        <section class="grid cols-2">
+            <article class="card">
+                <h3>Respuesta exitosa</h3>
+                <pre><code>{
+  "success": true,
+  "message": "OK",
+  "data": {},
+  "meta": []
+}</code></pre>
+            </article>
+            <article class="card">
+                <h3>Error de validación</h3>
+                <pre><code>{
+  "success": false,
+  "message": "Validation failed",
+  "errors": {
+    "field": ["..."]
+  }
+}</code></pre>
+            </article>
+        </section>
+
+        <section class="card" style="margin-top:16px;">
+            <h3>Notas</h3>
+            <ul>
+                <li>El ERP no crea usuarios ni login propio.</li>
+                <li>Los IDs de usuario global del Workspace se leen desde <code>X-Workspace-User-Id</code> o desde el payload.</li>
+                <li>Al crear contratos y otrosíes se genera un proceso asociado automáticamente.</li>
+                <li>Los consecutivos iniciales son <code>PR-</code>, <code>CT-</code> y <code>OT-</code>.</li>
+            </ul>
+        </section>
+
+        <h2 id="third-parties" class="section-title">Terceros</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/third-parties</strong>
+                <span class="tag">Lista terceros</span>
+            </div>
+            <pre><code>GET /api/erp/third-parties
+GET /api/erp/third-parties?erp_third_party_type=contractor</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/third-parties</strong>
+                <span class="tag">Crear tercero</span>
+            </div>
+            <pre><code>{
+  "erp_third_party_type": "contractor",
+  "erp_third_party_name": "Proveedor Demo",
+  "erp_third_party_document_number": "900123456",
+  "erp_third_party_email": "demo@example.com"
+}</code></pre>
+        </section>
+
+        <h2 id="contracts" class="section-title">Contratos</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/contracts</strong>
+                <span class="tag">Lista contratos</span>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/contracts</strong>
+                <span class="tag">Crea contrato y proceso</span>
+            </div>
+            <pre><code>{
+  "erp_contract_contractor_id": 1,
+  "erp_contract_title": "Contrato de prestación de servicios",
+  "erp_contract_object": "Apoyo operativo",
+  "erp_contract_total_value": 15000000,
+  "erp_process_priority": "medium"
+}</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/contracts/{contract}/move-step</strong>
+                <span class="tag">Mover paso</span>
+            </div>
+            <pre><code>{
+  "erp_workflow_step_slug": "documentation_review"
+}</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/contracts/{contract}/close</strong>
+                <span class="tag">Cerrar proceso</span>
+            </div>
+        </section>
+
+        <h2 id="addendums" class="section-title">Otrosíes</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/contract-addendums</strong>
+                <span class="tag">Lista otrosíes</span>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/contract-addendums</strong>
+                <span class="tag">Crea otrosí y proceso</span>
+            </div>
+            <pre><code>{
+  "erp_contract_addendum_contract_id": 1,
+  "erp_contract_addendum_type": "value",
+  "erp_contract_addendum_title": "Otrosí económico",
+  "erp_contract_addendum_description": "Ajuste del valor contractual"
+}</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/contract-addendums/{contractAddendum}/move-step</strong>
+                <span class="tag">Mover paso</span>
+            </div>
+            <pre><code>{
+  "erp_workflow_step_slug": "approval"
+}</code></pre>
+        </section>
+
+        <h2 id="documents" class="section-title">Documentos</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/documents</strong>
+            </div>
+            <pre><code>GET /api/erp/documents?erp_document_process_id=10</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/documents</strong>
+            </div>
+            <pre><code>{
+  "erp_document_process_id": 10,
+  "erp_document_reference_type": "contract",
+  "erp_document_reference_id": 1,
+  "erp_document_type": "support",
+  "erp_document_name": "RUT.pdf",
+  "erp_document_file_url": "https://files.example.com/rut.pdf"
+}</code></pre>
+        </section>
+
+        <h2 id="approvals" class="section-title">Aprobaciones</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/approvals</strong>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/approvals</strong>
+            </div>
+            <pre><code>{
+  "erp_approval_process_id": 10,
+  "erp_approval_step_id": 4,
+  "erp_approval_reference_type": "contract",
+  "erp_approval_reference_id": 1,
+  "erp_approval_comment": "Pendiente revisión final"
+}</code></pre>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/approvals/{approval}/approve</strong>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/approvals/{approval}/reject</strong>
+            </div>
+        </section>
+
+        <h2 id="comments" class="section-title">Comentarios</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/comments</strong>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method post">POST</span>
+                <strong>/api/erp/comments</strong>
+            </div>
+            <pre><code>{
+  "erp_comment_process_id": 10,
+  "erp_comment_reference_type": "contract",
+  "erp_comment_reference_id": 1,
+  "erp_comment_body": "Se adjuntó versión firmada del contrato"
+}</code></pre>
+        </section>
+
+        <h2 id="workflows" class="section-title">Flujos</h2>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/workflows</strong>
+                <span class="tag">Incluye steps</span>
+            </div>
+        </section>
+        <section class="endpoint">
+            <div class="endpoint-head">
+                <span class="method get">GET</span>
+                <strong>/api/erp/workflows/{workflow}</strong>
+            </div>
+        </section>
+    </main>
+</body>
+</html>
