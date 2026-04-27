@@ -121,6 +121,24 @@ class ErpProcessService
         return $process->load(['workflow', 'currentStep']);
     }
 
+    public function getNextStepSlug(ErpProcess $process): ?string
+    {
+        $process->loadMissing('currentStep');
+
+        $currentOrder = $process->currentStep instanceof ErpWorkflowStep
+            ? $process->currentStep->erp_workflow_step_order
+            : 0;
+
+        $nextStep = ErpWorkflowStep::query()
+            ->where('erp_workflow_step_workflow_id', $process->erp_process_workflow_id)
+            ->where('erp_workflow_step_is_active', true)
+            ->where('erp_workflow_step_order', '>', $currentOrder)
+            ->orderBy('erp_workflow_step_order')
+            ->first();
+
+        return $nextStep?->erp_workflow_step_slug;
+    }
+
     protected function resolveStatusForStep(ErpWorkflowStep $step, bool $isInitial = false): string
     {
         if ($isInitial && $step->erp_workflow_step_slug === 'create_request') {

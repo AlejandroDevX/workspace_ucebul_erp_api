@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'workspace' => [
+        'api_url' => env('WORKSPACE_API_URL', 'http://localhost:8000/api'),
+        'application_slug' => env('WORKSPACE_APPLICATION_SLUG', 'ucebul-erp'),
+    ],
+
 ];

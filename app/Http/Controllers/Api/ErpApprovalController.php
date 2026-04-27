@@ -43,13 +43,11 @@ class ErpApprovalController extends Controller
             'erp_approval_reference_type' => ['nullable', 'string', 'max:80'],
             'erp_approval_reference_id' => ['nullable', 'integer', 'min:1'],
             'erp_approval_status' => ['nullable', 'in:pending,approved,rejected'],
-            'erp_approval_requested_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
             'erp_approval_comment' => ['nullable', 'string'],
             'erp_approval_requested_at' => ['nullable', 'date'],
         ]);
 
-        $validated['erp_approval_requested_by_workspace_user_id'] = $validated['erp_approval_requested_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        $validated['erp_approval_requested_by_workspace_user_id'] = currentWorkspaceUserId();
         $validated['erp_approval_requested_at'] = $validated['erp_approval_requested_at'] ?? Carbon::now();
 
         $approval = ErpApproval::query()->create($validated)->load(['process', 'step']);
@@ -71,14 +69,12 @@ class ErpApprovalController extends Controller
     {
         $validated = $request->validate([
             'erp_approval_comment' => ['nullable', 'string'],
-            'erp_approval_approved_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         $approval->update([
             'erp_approval_status' => $status,
             'erp_approval_comment' => $validated['erp_approval_comment'] ?? $approval->erp_approval_comment,
-            'erp_approval_approved_by_workspace_user_id' => $validated['erp_approval_approved_by_workspace_user_id']
-                ?? currentWorkspaceUserId($request, $validated),
+            'erp_approval_approved_by_workspace_user_id' => currentWorkspaceUserId(),
             'erp_approval_resolved_at' => Carbon::now(),
         ]);
 

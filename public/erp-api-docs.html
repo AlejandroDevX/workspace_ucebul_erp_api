@@ -1,356 +1,513 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ERP API Docs</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: #f5f7fb;
-            color: #162033;
-        }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ERP API – Documentación</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; color: #1e293b; line-height: 1.6; }
+    a { color: #3b82f6; text-decoration: none; }
+    a:hover { text-decoration: underline; }
 
-        .page {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 32px 20px 64px;
-        }
+    /* Layout */
+    .layout { display: flex; min-height: 100vh; }
+    nav { width: 260px; min-height: 100vh; background: #1e293b; color: #cbd5e1; padding: 24px 0; position: sticky; top: 0; overflow-y: auto; flex-shrink: 0; }
+    nav .brand { padding: 0 20px 24px; border-bottom: 1px solid #334155; }
+    nav .brand h1 { font-size: 18px; font-weight: 700; color: #f1f5f9; }
+    nav .brand span { font-size: 12px; color: #64748b; }
+    nav ul { list-style: none; padding: 16px 0; }
+    nav ul li a { display: block; padding: 7px 20px; font-size: 13px; color: #94a3b8; transition: color .15s, background .15s; }
+    nav ul li a:hover { color: #f1f5f9; background: #334155; text-decoration: none; }
+    nav ul li.group-title { padding: 14px 20px 4px; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .08em; color: #475569; }
 
-        .hero,
-        .card,
-        .endpoint {
-            background: #fff;
-            border: 1px solid #dbe3f0;
-            border-radius: 10px;
-            padding: 20px;
-            box-shadow: 0 6px 24px rgba(15, 23, 42, 0.04);
-        }
+    main { flex: 1; padding: 40px 48px; max-width: 960px; }
+    section { margin-bottom: 56px; }
+    h2 { font-size: 24px; font-weight: 700; color: #0f172a; border-bottom: 2px solid #e2e8f0; padding-bottom: 10px; margin-bottom: 20px; }
+    h3 { font-size: 16px; font-weight: 600; color: #0f172a; margin: 28px 0 10px; }
+    p { margin-bottom: 12px; color: #374151; }
 
-        .hero {
-            margin-bottom: 24px;
-        }
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+    .get    { background: #dbeafe; color: #1d4ed8; }
+    .post   { background: #dcfce7; color: #15803d; }
+    .put    { background: #fef9c3; color: #854d0e; }
+    .delete { background: #fee2e2; color: #b91c1c; }
 
-        .section-title {
-            margin: 32px 0 16px;
-            font-size: 22px;
-        }
+    /* Code blocks */
+    pre { background: #0f172a; color: #e2e8f0; padding: 16px 20px; border-radius: 8px; overflow-x: auto; font-size: 13px; line-height: 1.7; margin: 12px 0; }
+    code { font-family: 'JetBrains Mono', 'Cascadia Code', monospace; }
+    .ic { background: #e2e8f0; color: #1e293b; padding: 1px 6px; border-radius: 4px; font-size: 13px; font-family: monospace; }
 
-        .grid {
-            display: grid;
-            gap: 16px;
-        }
+    /* Alert boxes */
+    .alert { padding: 14px 18px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+    .alert-info    { background: #eff6ff; border-left: 4px solid #3b82f6; color: #1e40af; }
+    .alert-warning { background: #fffbeb; border-left: 4px solid #f59e0b; color: #92400e; }
 
-        .grid.cols-2 {
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-        }
+    /* Endpoint table */
+    .etable { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+    .etable th { background: #f1f5f9; color: #475569; font-weight: 600; text-align: left; padding: 10px 12px; border-bottom: 2px solid #e2e8f0; }
+    .etable td { padding: 9px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .etable tr:hover td { background: #f8fafc; }
+    .etable .path { font-family: monospace; color: #0f172a; }
+    .etable .perm { font-family: monospace; font-size: 12px; color: #6366f1; }
 
-        .endpoint {
-            margin-bottom: 16px;
-        }
+    /* Response table */
+    .rtable { width: 100%; border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+    .rtable th { background: #f1f5f9; color: #475569; font-weight: 600; padding: 8px 12px; text-align: left; }
+    .rtable td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .c401 { font-weight: 700; color: #dc2626; }
+    .c403 { font-weight: 700; color: #d97706; }
+    .c503 { font-weight: 700; color: #7c3aed; }
 
-        .endpoint-head {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-            margin-bottom: 12px;
-        }
+    /* Permission grid */
+    .pgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 12px; }
+    .pcard { background: #fff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; }
+    .pcard h4 { font-size: 13px; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .pcard ul { list-style: none; }
+    .pcard ul li { font-family: monospace; font-size: 12px; color: #6366f1; padding: 2px 0; }
 
-        .method,
-        .tag {
-            display: inline-flex;
-            align-items: center;
-            padding: 4px 10px;
-            border-radius: 999px;
-            font-size: 12px;
-            font-weight: 700;
-        }
-
-        .method {
-            color: #fff;
-        }
-
-        .get { background: #2563eb; }
-        .post { background: #16a34a; }
-        .put { background: #d97706; }
-        .delete { background: #dc2626; }
-
-        .tag {
-            background: #eef2ff;
-            color: #4338ca;
-        }
-
-        code,
-        pre {
-            font-family: Consolas, monospace;
-        }
-
-        pre {
-            overflow: auto;
-            background: #0f172a;
-            color: #e2e8f0;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 13px;
-        }
-
-        ul {
-            margin: 0;
-            padding-left: 18px;
-        }
-
-        .toc {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .toc a {
-            color: #1d4ed8;
-            text-decoration: none;
-            font-weight: 600;
-        }
-    </style>
+    @media (max-width: 768px) {
+      nav { display: none; }
+      main { padding: 24px 20px; }
+      .pgrid { grid-template-columns: 1fr; }
+    }
+  </style>
 </head>
 <body>
-    <main class="page">
-        <section class="hero">
-            <p><strong>UCEBUL ERP API</strong></p>
-            <h1>MVP Contratos y Otrosíes</h1>
-            <p>Documentación base de la API Laravel para terceros, contratos, otrosíes, documentos, aprobaciones, comentarios y flujos bajo el prefijo <code>/api/erp</code>.</p>
-            <div class="toc">
-                <a href="#general">General</a>
-                <a href="#third-parties">Terceros</a>
-                <a href="#contracts">Contratos</a>
-                <a href="#addendums">Otrosíes</a>
-                <a href="#documents">Documentos</a>
-                <a href="#approvals">Aprobaciones</a>
-                <a href="#comments">Comentarios</a>
-                <a href="#workflows">Flujos</a>
-            </div>
-        </section>
+<div class="layout">
 
-        <h2 id="general" class="section-title">General</h2>
-        <section class="grid cols-2">
-            <article class="card">
-                <h3>Respuesta exitosa</h3>
-                <pre><code>{
-  "success": true,
-  "message": "OK",
-  "data": {},
-  "meta": []
-}</code></pre>
-            </article>
-            <article class="card">
-                <h3>Error de validación</h3>
-                <pre><code>{
-  "success": false,
-  "message": "Validation failed",
-  "errors": {
-    "field": ["..."]
+  <nav>
+    <div class="brand">
+      <h1>ERP API</h1>
+      <span>Documentación v1.0</span>
+    </div>
+    <ul>
+      <li class="group-title">Introducción</li>
+      <li><a href="#autenticacion">Autenticación</a></li>
+      <li><a href="#permisos">Permisos</a></li>
+      <li><a href="#errores">Respuestas de error</a></li>
+      <li class="group-title">Módulos</li>
+      <li><a href="#third-parties">Terceros</a></li>
+      <li><a href="#contracts">Contratos</a></li>
+      <li><a href="#addendums">Otrosíes</a></li>
+      <li><a href="#documents">Documentos</a></li>
+      <li><a href="#approvals">Aprobaciones</a></li>
+      <li><a href="#comments">Comentarios</a></li>
+      <li><a href="#workflows">Flujos</a></li>
+      <li class="group-title">Referencia</li>
+      <li><a href="#all-endpoints">Todos los endpoints</a></li>
+      <li><a href="#all-permissions">Todos los permisos</a></li>
+    </ul>
+  </nav>
+
+  <main>
+
+    <section id="autenticacion">
+      <h2>Autenticación</h2>
+      <div class="alert alert-info">
+        El ERP no tiene login propio. Usa el token del <strong>Workspace</strong> como fuente de verdad.
+        No se crean usuarios ni contraseñas en la base de datos del ERP.
+      </div>
+      <p>El frontend envía el token de sesión del Workspace en cada solicitud al ERP:</p>
+      <pre><code>Authorization: Bearer {workspace_token}</code></pre>
+
+      <h3>¿Qué hace el ERP con el token?</h3>
+      <p>El middleware <span class="ic">EnsureWorkspaceAuthenticated</span> llama internamente al Workspace por cada solicitud:</p>
+      <pre><code>GET {WORKSPACE_API_URL}/auth/me?application_slug=erp
+Authorization: Bearer {workspace_token}</code></pre>
+      <p>Si la respuesta es válida, se adjuntan a la request los datos del contexto del usuario:</p>
+      <pre><code>{
+  "workspace_user_id": 42,
+  "workspace_user": { "id": 42, "name": "...", "email": "..." },
+  "workspace_roles": [...],
+  "current_application": { "slug": "erp", ... },
+  "current_application_access": { ... },
+  "current_application_permissions": {
+    "contracts": {
+      "module_name": "Contratos",
+      "module_slug": "contracts",
+      "permissions": [
+        { "workspace_application_permission_slug": "erp.contracts.view" }
+      ]
+    }
   }
 }</code></pre>
-            </article>
-        </section>
+      <p>
+        El <span class="ic">workspace_user_id</span> se asigna automáticamente en campos como
+        <span class="ic">erp_contract_created_by_workspace_user_id</span>,
+        <span class="ic">erp_document_uploaded_by_workspace_user_id</span>, etc.
+        El frontend <strong>no necesita enviarlos en el payload</strong>.
+      </p>
 
-        <section class="card" style="margin-top:16px;">
-            <h3>Notas</h3>
-            <ul>
-                <li>El ERP no crea usuarios ni login propio.</li>
-                <li>Los IDs de usuario global del Workspace se leen desde <code>X-Workspace-User-Id</code> o desde el payload.</li>
-                <li>Al crear contratos y otrosíes se genera un proceso asociado automáticamente.</li>
-                <li>Los consecutivos iniciales son <code>PR-</code>, <code>CT-</code> y <code>OT-</code>.</li>
-            </ul>
-        </section>
+      <h3>Variables de entorno requeridas</h3>
+      <pre><code>WORKSPACE_API_URL=http://localhost:8000/api
+WORKSPACE_APPLICATION_SLUG=erp</code></pre>
+    </section>
 
-        <h2 id="third-parties" class="section-title">Terceros</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/third-parties</strong>
-                <span class="tag">Lista terceros</span>
-            </div>
-            <pre><code>GET /api/erp/third-parties
-GET /api/erp/third-parties?erp_third_party_type=contractor</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/third-parties</strong>
-                <span class="tag">Crear tercero</span>
-            </div>
-            <pre><code>{
-  "erp_third_party_type": "contractor",
-  "erp_third_party_name": "Proveedor Demo",
-  "erp_third_party_document_number": "900123456",
-  "erp_third_party_email": "demo@example.com"
-}</code></pre>
-        </section>
+    <section id="permisos">
+      <h2>Permisos</h2>
+      <p>
+        La autenticación no es suficiente. Cada endpoint valida además que el usuario tenga
+        la <strong>funcionalidad asignada</strong> en Workspace para la app <span class="ic">erp</span>.
+      </p>
+      <p>
+        El middleware <span class="ic">EnsureWorkspacePermission</span> recibe los permisos agrupados de Workspace
+        y verifica que el slug requerido exista en la lista plana.
+      </p>
 
-        <h2 id="contracts" class="section-title">Contratos</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/contracts</strong>
-                <span class="tag">Lista contratos</span>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/contracts</strong>
-                <span class="tag">Crea contrato y proceso</span>
-            </div>
-            <pre><code>{
-  "erp_contract_contractor_id": 1,
-  "erp_contract_title": "Contrato de prestación de servicios",
-  "erp_contract_object": "Apoyo operativo",
-  "erp_contract_total_value": 15000000,
-  "erp_process_priority": "medium"
+      <h3>Estructura de permisos desde Workspace</h3>
+      <pre><code>{
+  "contracts": {
+    "module_name": "Contratos",
+    "module_slug": "contracts",
+    "permissions": [
+      { "workspace_application_permission_slug": "erp.contracts.view" },
+      { "workspace_application_permission_slug": "erp.contracts.create" }
+    ]
+  },
+  "without_module": {
+    "permissions": [
+      { "workspace_application_permission_slug": "erp.workflows.view" }
+    ]
+  }
 }</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/contracts/{contract}/move-step</strong>
-                <span class="tag">Mover paso</span>
-            </div>
-            <pre><code>{
-  "erp_workflow_step_slug": "documentation_review"
-}</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/contracts/{contract}/close</strong>
-                <span class="tag">Cerrar proceso</span>
-            </div>
-        </section>
 
-        <h2 id="addendums" class="section-title">Otrosíes</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/contract-addendums</strong>
-                <span class="tag">Lista otrosíes</span>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/contract-addendums</strong>
-                <span class="tag">Crea otrosí y proceso</span>
-            </div>
-            <pre><code>{
-  "erp_contract_addendum_contract_id": 1,
-  "erp_contract_addendum_type": "value",
-  "erp_contract_addendum_title": "Otrosí económico",
-  "erp_contract_addendum_description": "Ajuste del valor contractual"
-}</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/contract-addendums/{contractAddendum}/move-step</strong>
-                <span class="tag">Mover paso</span>
-            </div>
-            <pre><code>{
-  "erp_workflow_step_slug": "approval"
-}</code></pre>
-        </section>
+      <h3>Uso en rutas (interno)</h3>
+      <pre><code>Route::get('/erp/contracts', ...)
+    ->middleware([
+        'workspace.auth',
+        'workspace.permission:erp.contracts.view',
+    ]);</code></pre>
+    </section>
 
-        <h2 id="documents" class="section-title">Documentos</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/documents</strong>
-            </div>
-            <pre><code>GET /api/erp/documents?erp_document_process_id=10</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/documents</strong>
-            </div>
-            <pre><code>{
-  "erp_document_process_id": 10,
-  "erp_document_reference_type": "contract",
+    <section id="errores">
+      <h2>Respuestas de error</h2>
+      <table class="rtable">
+        <thead><tr><th>Código</th><th>Causa</th><th>Cuerpo de respuesta</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="c401">401</td>
+            <td>Token ausente, inválido o expirado</td>
+            <td><pre style="margin:0"><code>{ "success": false, "message": "Unauthenticated", "errors": [] }</code></pre></td>
+          </tr>
+          <tr>
+            <td class="c403">403 (acceso)</td>
+            <td>Usuario sin acceso a la app <span class="ic">erp</span></td>
+            <td><pre style="margin:0"><code>{ "success": false, "message": "You do not have access to this application", "errors": [] }</code></pre></td>
+          </tr>
+          <tr>
+            <td class="c403">403 (permiso)</td>
+            <td>Usuario sin el permiso requerido</td>
+            <td><pre style="margin:0"><code>{
+  "success": false,
+  "message": "You do not have permission to perform this action",
+  "errors": {
+    "permission": ["Required permission: erp.contracts.create"]
+  }
+}</code></pre></td>
+          </tr>
+          <tr>
+            <td class="c503">503</td>
+            <td>Workspace no responde o falla</td>
+            <td><pre style="margin:0"><code>{ "success": false, "message": "Authentication service unavailable", "errors": [] }</code></pre></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="third-parties">
+      <h2>Terceros</h2>
+      <p>Gestión de contratistas, proveedores, clientes y otros terceros.</p>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/third-parties</td><td class="perm">erp.third_parties.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/third-parties</td><td class="perm">erp.third_parties.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.delete</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST / PUT</h3>
+      <pre><code>{
+  "erp_third_party_name": "Empresa Ejemplo S.A.S",   // requerido
+  "erp_third_party_type": "contractor",               // contractor|supplier|customer|other
+  "erp_third_party_document_type": "NIT",
+  "erp_third_party_document_number": "900123456-7",
+  "erp_third_party_email": "contacto@empresa.com",
+  "erp_third_party_phone": "+57 300 000 0000",
+  "erp_third_party_address": "Calle 123 #45-67",
+  "erp_third_party_bank_name": "Banco de Colombia",
+  "erp_third_party_bank_account_type": "corriente",
+  "erp_third_party_bank_account_number": "12345678",
+  "erp_third_party_is_active": true
+}
+// erp_third_party_created_by_workspace_user_id se asigna automáticamente del token</code></pre>
+    </section>
+
+    <section id="contracts">
+      <h2>Contratos</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contracts</td><td class="perm">erp.contracts.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts</td><td class="perm">erp.contracts.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.delete</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts/{id}/move-step</td><td class="perm">erp.contracts.move_step</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts/{id}/close</td><td class="perm">erp.contracts.close</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST</h3>
+      <pre><code>{
+  "erp_contract_contractor_id": 1,                 // requerido
+  "erp_contract_title": "Contrato de servicios",   // requerido
+  "erp_contract_object": "Descripción del objeto", // requerido
+  "erp_contract_company_id": null,
+  "erp_contract_contract_type": "Prestación de servicios",
+  "erp_contract_start_date": "2026-05-01",
+  "erp_contract_end_date": "2026-12-31",
+  "erp_contract_total_value": 50000000,
+  "erp_contract_payment_method": "mensual",
+  "erp_contract_supervisor_workspace_user_id": 5,
+  "erp_contract_status": "draft",
+  "erp_process_priority": "high",
+  "erp_process_assigned_to_workspace_user_id": 3
+}
+// erp_contract_created_by_workspace_user_id se asigna automáticamente del token</code></pre>
+      <h3>Payload – move-step</h3>
+      <pre><code>{ "erp_workflow_step_slug": "documentation_review" }</code></pre>
+    </section>
+
+    <section id="addendums">
+      <h2>Otrosíes (Contract Addendums)</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contract-addendums</td><td class="perm">erp.contract_addendums.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums</td><td class="perm">erp.contract_addendums.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.delete</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums/{id}/move-step</td><td class="perm">erp.contract_addendums.move_step</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums/{id}/close</td><td class="perm">erp.contract_addendums.close</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST</h3>
+      <pre><code>{
+  "erp_contract_addendum_contract_id": 1,            // requerido
+  "erp_contract_addendum_title": "Otrosí No. 1",     // requerido
+  "erp_contract_addendum_description": "...",        // requerido
+  "erp_contract_addendum_type": "value",             // date|position|functions|value|payment_method|supervisor|other
+  "erp_contract_addendum_previous_value": "50000000",
+  "erp_contract_addendum_new_value": "60000000",
+  "erp_contract_addendum_effective_date": "2026-06-01",
+  "erp_contract_addendum_status": "draft",
+  "erp_process_priority": "medium",
+  "erp_process_assigned_to_workspace_user_id": 3
+}
+// erp_contract_addendum_created_by_workspace_user_id se asigna automáticamente del token</code></pre>
+    </section>
+
+    <section id="documents">
+      <h2>Documentos</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/documents</td><td class="perm">erp.documents.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/documents</td><td class="perm">erp.documents.upload</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/documents/{id}</td><td class="perm">erp.documents.delete</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST</h3>
+      <pre><code>{
+  "erp_document_process_id": 1,
+  "erp_document_reference_type": "contract",        // contract|contract_addendum
   "erp_document_reference_id": 1,
-  "erp_document_type": "support",
-  "erp_document_name": "RUT.pdf",
-  "erp_document_file_url": "https://files.example.com/rut.pdf"
-}</code></pre>
-        </section>
+  "erp_document_type": "Cédula de ciudadanía",      // requerido
+  "erp_document_name": "cedula_juan_perez.pdf",     // requerido
+  "erp_document_file_url": "https://storage/...",   // requerido
+  "erp_document_file_mime_type": "application/pdf",
+  "erp_document_file_size": 204800
+}
+// erp_document_uploaded_by_workspace_user_id se asigna automáticamente del token</code></pre>
+    </section>
 
-        <h2 id="approvals" class="section-title">Aprobaciones</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/approvals</strong>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/approvals</strong>
-            </div>
-            <pre><code>{
-  "erp_approval_process_id": 10,
-  "erp_approval_step_id": 4,
+    <section id="approvals">
+      <h2>Aprobaciones</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/approvals</td><td class="perm">erp.approvals.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals</td><td class="perm">erp.approvals.create</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals/{id}/approve</td><td class="perm">erp.approvals.approve</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals/{id}/reject</td><td class="perm">erp.approvals.reject</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST (crear)</h3>
+      <pre><code>{
+  "erp_approval_process_id": 1,                    // requerido
+  "erp_approval_step_id": 3,
   "erp_approval_reference_type": "contract",
   "erp_approval_reference_id": 1,
-  "erp_approval_comment": "Pendiente revisión final"
-}</code></pre>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/approvals/{approval}/approve</strong>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/approvals/{approval}/reject</strong>
-            </div>
-        </section>
+  "erp_approval_status": "pending",
+  "erp_approval_comment": "Solicitud inicial",
+  "erp_approval_requested_at": "2026-04-24T10:00:00Z"
+}
+// erp_approval_requested_by_workspace_user_id se asigna automáticamente del token</code></pre>
+      <h3>Payload – approve / reject</h3>
+      <pre><code>{ "erp_approval_comment": "Aprobado con observaciones menores" }
+// erp_approval_approved_by_workspace_user_id se asigna automáticamente del token</code></pre>
+    </section>
 
-        <h2 id="comments" class="section-title">Comentarios</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/comments</strong>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method post">POST</span>
-                <strong>/api/erp/comments</strong>
-            </div>
-            <pre><code>{
-  "erp_comment_process_id": 10,
+    <section id="comments">
+      <h2>Comentarios</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/comments</td><td class="perm">erp.comments.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/comments</td><td class="perm">erp.comments.create</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/comments/{id}</td><td class="perm">erp.comments.delete</td></tr>
+        </tbody>
+      </table>
+      <h3>Payload – POST</h3>
+      <pre><code>{
+  "erp_comment_process_id": 1,
   "erp_comment_reference_type": "contract",
   "erp_comment_reference_id": 1,
-  "erp_comment_body": "Se adjuntó versión firmada del contrato"
-}</code></pre>
-        </section>
+  "erp_comment_body": "Revisar cláusula 5 antes de firmar."
+}
+// erp_comment_created_by_workspace_user_id se asigna automáticamente del token</code></pre>
+    </section>
 
-        <h2 id="workflows" class="section-title">Flujos</h2>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/workflows</strong>
-                <span class="tag">Incluye steps</span>
-            </div>
-        </section>
-        <section class="endpoint">
-            <div class="endpoint-head">
-                <span class="method get">GET</span>
-                <strong>/api/erp/workflows/{workflow}</strong>
-            </div>
-        </section>
-    </main>
+    <section id="workflows">
+      <h2>Flujos (Workflows)</h2>
+      <p>Solo lectura. Los flujos se configuran en la base de datos.</p>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/workflows</td><td class="perm">erp.workflows.view</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/workflows/{id}</td><td class="perm">erp.workflows.view</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="all-endpoints">
+      <h2>Todos los endpoints</h2>
+      <table class="etable">
+        <thead><tr><th>Método</th><th>Ruta</th><th>Permiso requerido</th></tr></thead>
+        <tbody>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/third-parties</td><td class="perm">erp.third_parties.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/third-parties</td><td class="perm">erp.third_parties.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/third-parties/{id}</td><td class="perm">erp.third_parties.delete</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contracts</td><td class="perm">erp.contracts.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts</td><td class="perm">erp.contracts.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/contracts/{id}</td><td class="perm">erp.contracts.delete</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts/{id}/move-step</td><td class="perm">erp.contracts.move_step</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contracts/{id}/close</td><td class="perm">erp.contracts.close</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contract-addendums</td><td class="perm">erp.contract_addendums.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums</td><td class="perm">erp.contract_addendums.create</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.view</td></tr>
+          <tr><td><span class="badge put">PUT/PATCH</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.update</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/contract-addendums/{id}</td><td class="perm">erp.contract_addendums.delete</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums/{id}/move-step</td><td class="perm">erp.contract_addendums.move_step</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/contract-addendums/{id}/close</td><td class="perm">erp.contract_addendums.close</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/documents</td><td class="perm">erp.documents.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/documents</td><td class="perm">erp.documents.upload</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/documents/{id}</td><td class="perm">erp.documents.delete</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/approvals</td><td class="perm">erp.approvals.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals</td><td class="perm">erp.approvals.create</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals/{id}/approve</td><td class="perm">erp.approvals.approve</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/approvals/{id}/reject</td><td class="perm">erp.approvals.reject</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/comments</td><td class="perm">erp.comments.view</td></tr>
+          <tr><td><span class="badge post">POST</span></td><td class="path">/api/erp/comments</td><td class="perm">erp.comments.create</td></tr>
+          <tr><td><span class="badge delete">DELETE</span></td><td class="path">/api/erp/comments/{id}</td><td class="perm">erp.comments.delete</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/workflows</td><td class="perm">erp.workflows.view</td></tr>
+          <tr><td><span class="badge get">GET</span></td><td class="path">/api/erp/workflows/{id}</td><td class="perm">erp.workflows.view</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="all-permissions">
+      <h2>Todos los permisos en Workspace</h2>
+      <p>Registrar en Workspace bajo la app con slug <span class="ic">erp</span>:</p>
+      <div class="pgrid">
+        <div class="pcard">
+          <h4>Contratos</h4>
+          <ul>
+            <li>erp.contracts.view</li>
+            <li>erp.contracts.create</li>
+            <li>erp.contracts.update</li>
+            <li>erp.contracts.delete</li>
+            <li>erp.contracts.move_step</li>
+            <li>erp.contracts.close</li>
+            <li>erp.contracts.approve</li>
+            <li>erp.contracts.reject</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Otrosíes</h4>
+          <ul>
+            <li>erp.contract_addendums.view</li>
+            <li>erp.contract_addendums.create</li>
+            <li>erp.contract_addendums.update</li>
+            <li>erp.contract_addendums.delete</li>
+            <li>erp.contract_addendums.move_step</li>
+            <li>erp.contract_addendums.close</li>
+            <li>erp.contract_addendums.approve</li>
+            <li>erp.contract_addendums.reject</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Terceros</h4>
+          <ul>
+            <li>erp.third_parties.view</li>
+            <li>erp.third_parties.create</li>
+            <li>erp.third_parties.update</li>
+            <li>erp.third_parties.delete</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Documentos</h4>
+          <ul>
+            <li>erp.documents.view</li>
+            <li>erp.documents.upload</li>
+            <li>erp.documents.delete</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Aprobaciones</h4>
+          <ul>
+            <li>erp.approvals.view</li>
+            <li>erp.approvals.create</li>
+            <li>erp.approvals.approve</li>
+            <li>erp.approvals.reject</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Comentarios</h4>
+          <ul>
+            <li>erp.comments.view</li>
+            <li>erp.comments.create</li>
+            <li>erp.comments.delete</li>
+          </ul>
+        </div>
+        <div class="pcard">
+          <h4>Flujos</h4>
+          <ul>
+            <li>erp.workflows.view</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
 </body>
 </html>

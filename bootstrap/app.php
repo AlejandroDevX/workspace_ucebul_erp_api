@@ -1,5 +1,7 @@
 <?php
 
+use App\Http\Middleware\EnsureWorkspaceAuthenticated;
+use App\Http\Middleware\EnsureWorkspacePermission;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
@@ -15,7 +17,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'workspace.auth' => EnsureWorkspaceAuthenticated::class,
+            'workspace.permission' => EnsureWorkspacePermission::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         $exceptions->render(function (ValidationException $exception, $request) {

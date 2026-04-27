@@ -25,6 +25,7 @@ class ErpDocument extends Model
         'erp_document_type',
         'erp_document_name',
         'erp_document_file_url',
+        'erp_document_file_path',
         'erp_document_file_mime_type',
         'erp_document_file_size',
         'erp_document_uploaded_by_workspace_user_id',

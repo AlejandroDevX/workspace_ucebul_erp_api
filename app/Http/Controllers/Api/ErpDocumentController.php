@@ -7,9 +7,12 @@ use App\Models\ErpContract;
 use App\Models\ErpContractAddendum;
 use App\Models\ErpDocument;
 use App\Models\ErpProcess;
+use App\Models\ErpThirdParty;
 use App\Services\ErpProcessEventService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Symfony\Component\HttpFoundation\Response;
 
 class ErpDocumentController extends Controller
@@ -44,28 +47,51 @@ class ErpDocumentController extends Controller
     {
         $validated = $request->validate([
             'erp_document_process_id' => ['nullable', 'integer', 'exists:erp_processes,erp_process_id'],
-            'erp_document_reference_type' => ['nullable', 'in:contract,contract_addendum'],
+            'erp_document_reference_type' => ['nullable', 'in:contract,contract_addendum,third_party'],
             'erp_document_reference_id' => ['nullable', 'integer', 'min:1'],
-            'erp_document_type' => ['required', 'string', 'max:100'],
-            'erp_document_name' => ['required', 'string', 'max:180'],
-            'erp_document_file_url' => ['required', 'string', 'max:500'],
-            'erp_document_file_mime_type' => ['nullable', 'string', 'max:120'],
-            'erp_document_file_size' => ['nullable', 'integer', 'min:0'],
-            'erp_document_uploaded_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
+            'erp_document_type' => ['nullable', 'string', 'max:100'],
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
         ]);
 
-        if (($validated['erp_document_reference_type'] ?? null) === 'contract') {
-            ErpContract::query()->findOrFail($validated['erp_document_reference_id']);
+        $referenceType = $validated['erp_document_reference_type'] ?? null;
+        $referenceId = $validated['erp_document_reference_id'] ?? null;
+
+        if ($referenceType === 'contract') {
+            ErpContract::query()->findOrFail($referenceId);
         }
 
-        if (($validated['erp_document_reference_type'] ?? null) === 'contract_addendum') {
-            ErpContractAddendum::query()->findOrFail($validated['erp_document_reference_id']);
+        if ($referenceType === 'contract_addendum') {
+            ErpContractAddendum::query()->findOrFail($referenceId);
         }
 
-        $validated['erp_document_uploaded_by_workspace_user_id'] = $validated['erp_document_uploaded_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        if ($referenceType === 'third_party') {
+            ErpThirdParty::query()->findOrFail($referenceId);
+        }
 
-        $document = ErpDocument::query()->create($validated)->load('process');
+        $file = $request->file('file');
+        $folder = $referenceType && $referenceId
+            ? "erp/documents/{$referenceType}/{$referenceId}"
+            : 'erp/documents/misc';
+        $storagePath = "{$folder}/".Str::uuid().'.pdf';
+
+        $file->storeAs(
+            dirname($storagePath),
+            basename($storagePath),
+            'public',
+        );
+
+        $document = ErpDocument::query()->create([
+            'erp_document_process_id' => $validated['erp_document_process_id'] ?? null,
+            'erp_document_reference_type' => $referenceType,
+            'erp_document_reference_id' => $referenceId,
+            'erp_document_type' => $validated['erp_document_type'] ?? 'attachment',
+            'erp_document_name' => $file->getClientOriginalName(),
+            'erp_document_file_url' => Storage::disk('public')->url($storagePath),
+            'erp_document_file_path' => $storagePath,
+            'erp_document_file_mime_type' => $file->getMimeType(),
+            'erp_document_file_size' => $file->getSize(),
+            'erp_document_uploaded_by_workspace_user_id' => currentWorkspaceUserId(),
+        ])->load('process');
 
         if ($document->process instanceof ErpProcess) {
             $this->processEventService->logDocumentUploaded(
@@ -81,6 +107,10 @@ class ErpDocumentController extends Controller
 
     public function destroy(ErpDocument $document): JsonResponse
     {
+        if ($document->erp_document_file_path && Storage::disk('public')->exists($document->erp_document_file_path)) {
+            Storage::disk('public')->delete($document->erp_document_file_path);
+        }
+
         $document->delete();
 
         return $this->successResponse(null, 'ERP document deleted successfully');

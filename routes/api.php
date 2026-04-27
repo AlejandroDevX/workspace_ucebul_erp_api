@@ -9,21 +9,55 @@ use App\Http\Controllers\Api\ErpThirdPartyController;
 use App\Http\Controllers\Api\ErpWorkflowController;
 use Illuminate\Support\Facades\Route;
 
-Route::prefix('erp')->group(function () {
-    Route::apiResource('third-parties', ErpThirdPartyController::class);
-    Route::apiResource('contracts', ErpContractController::class);
-    Route::post('contracts/{contract}/move-step', [ErpContractController::class, 'moveStep']);
-    Route::post('contracts/{contract}/close', [ErpContractController::class, 'close']);
+Route::prefix('erp')->middleware('workspace.auth')->group(function () {
+    // Third Parties
+    Route::get('third-parties', [ErpThirdPartyController::class, 'index'])->middleware('workspace.permission:erp.third_parties.view');
+    Route::post('third-parties', [ErpThirdPartyController::class, 'store'])->middleware('workspace.permission:erp.third_parties.create');
+    Route::get('third-parties/{third_party}', [ErpThirdPartyController::class, 'show'])->middleware('workspace.permission:erp.third_parties.view');
+    Route::put('third-parties/{third_party}', [ErpThirdPartyController::class, 'update'])->middleware('workspace.permission:erp.third_parties.update');
+    Route::patch('third-parties/{third_party}', [ErpThirdPartyController::class, 'update'])->middleware('workspace.permission:erp.third_parties.update');
+    Route::delete('third-parties/{third_party}', [ErpThirdPartyController::class, 'destroy'])->middleware('workspace.permission:erp.third_parties.delete');
+    Route::get('third-parties/{third_party}/required-documents-status', [ErpThirdPartyController::class, 'requiredDocumentsStatus'])->middleware('workspace.permission:erp.third_parties.view');
+    Route::post('third-parties/{third_party}/required-documents/{documentType}', [ErpThirdPartyController::class, 'uploadRequiredDocument'])->middleware('workspace.permission:erp.documents.upload');
+    Route::delete('third-parties/{third_party}/required-documents/{documentType}', [ErpThirdPartyController::class, 'deleteRequiredDocument'])->middleware('workspace.permission:erp.documents.delete');
 
-    Route::apiResource('contract-addendums', ErpContractAddendumController::class);
-    Route::post('contract-addendums/{contractAddendum}/move-step', [ErpContractAddendumController::class, 'moveStep']);
-    Route::post('contract-addendums/{contractAddendum}/close', [ErpContractAddendumController::class, 'close']);
+    // Contracts
+    Route::get('contracts', [ErpContractController::class, 'index'])->middleware('workspace.permission:erp.contracts.view');
+    Route::post('contracts', [ErpContractController::class, 'store'])->middleware('workspace.permission:erp.contracts.create');
+    Route::get('contracts/{contract}', [ErpContractController::class, 'show'])->middleware('workspace.permission:erp.contracts.view');
+    Route::put('contracts/{contract}', [ErpContractController::class, 'update'])->middleware('workspace.permission:erp.contracts.update');
+    Route::patch('contracts/{contract}', [ErpContractController::class, 'update'])->middleware('workspace.permission:erp.contracts.update');
+    Route::delete('contracts/{contract}', [ErpContractController::class, 'destroy'])->middleware('workspace.permission:erp.contracts.delete');
+    Route::post('contracts/{contract}/move-step', [ErpContractController::class, 'moveStep'])->middleware('workspace.permission:erp.contracts.move_step');
+    Route::post('contracts/{contract}/close', [ErpContractController::class, 'close'])->middleware('workspace.permission:erp.contracts.close');
 
-    Route::apiResource('documents', ErpDocumentController::class)->only(['index', 'store', 'destroy']);
-    Route::apiResource('approvals', ErpApprovalController::class)->only(['index', 'store']);
-    Route::post('approvals/{approval}/approve', [ErpApprovalController::class, 'approve']);
-    Route::post('approvals/{approval}/reject', [ErpApprovalController::class, 'reject']);
+    // Contract Addendums
+    Route::get('contract-addendums', [ErpContractAddendumController::class, 'index'])->middleware('workspace.permission:erp.contract_addendums.view');
+    Route::post('contract-addendums', [ErpContractAddendumController::class, 'store'])->middleware('workspace.permission:erp.contract_addendums.create');
+    Route::get('contract-addendums/{contract_addendum}', [ErpContractAddendumController::class, 'show'])->middleware('workspace.permission:erp.contract_addendums.view');
+    Route::put('contract-addendums/{contract_addendum}', [ErpContractAddendumController::class, 'update'])->middleware('workspace.permission:erp.contract_addendums.update');
+    Route::patch('contract-addendums/{contract_addendum}', [ErpContractAddendumController::class, 'update'])->middleware('workspace.permission:erp.contract_addendums.update');
+    Route::delete('contract-addendums/{contract_addendum}', [ErpContractAddendumController::class, 'destroy'])->middleware('workspace.permission:erp.contract_addendums.delete');
+    Route::post('contract-addendums/{contract_addendum}/move-step', [ErpContractAddendumController::class, 'moveStep'])->middleware('workspace.permission:erp.contract_addendums.move_step');
+    Route::post('contract-addendums/{contract_addendum}/close', [ErpContractAddendumController::class, 'close'])->middleware('workspace.permission:erp.contract_addendums.close');
 
-    Route::apiResource('comments', ErpCommentController::class)->only(['index', 'store', 'destroy']);
-    Route::apiResource('workflows', ErpWorkflowController::class)->only(['index', 'show']);
+    // Documents
+    Route::get('documents', [ErpDocumentController::class, 'index'])->middleware('workspace.permission:erp.documents.view');
+    Route::post('documents', [ErpDocumentController::class, 'store'])->middleware('workspace.permission:erp.documents.upload');
+    Route::delete('documents/{document}', [ErpDocumentController::class, 'destroy'])->middleware('workspace.permission:erp.documents.delete');
+
+    // Approvals
+    Route::get('approvals', [ErpApprovalController::class, 'index'])->middleware('workspace.permission:erp.approvals.view');
+    Route::post('approvals', [ErpApprovalController::class, 'store'])->middleware('workspace.permission:erp.approvals.create');
+    Route::post('approvals/{approval}/approve', [ErpApprovalController::class, 'approve'])->middleware('workspace.permission:erp.approvals.approve');
+    Route::post('approvals/{approval}/reject', [ErpApprovalController::class, 'reject'])->middleware('workspace.permission:erp.approvals.reject');
+
+    // Comments
+    Route::get('comments', [ErpCommentController::class, 'index'])->middleware('workspace.permission:erp.comments.view');
+    Route::post('comments', [ErpCommentController::class, 'store'])->middleware('workspace.permission:erp.comments.create');
+    Route::delete('comments/{comment}', [ErpCommentController::class, 'destroy'])->middleware('workspace.permission:erp.comments.delete');
+
+    // Workflows (read-only)
+    Route::get('workflows', [ErpWorkflowController::class, 'index'])->middleware('workspace.permission:erp.workflows.view');
+    Route::get('workflows/{workflow}', [ErpWorkflowController::class, 'show'])->middleware('workspace.permission:erp.workflows.view');
 });

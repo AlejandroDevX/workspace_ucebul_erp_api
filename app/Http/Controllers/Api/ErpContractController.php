@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ErpContract;
 use App\Models\ErpProcess;
+use App\Models\ErpThirdParty;
+use App\Services\ErpContractorDocumentService;
 use App\Services\ErpNumberSequenceService;
 use App\Services\ErpProcessEventService;
 use App\Services\ErpProcessService;
@@ -19,6 +21,7 @@ class ErpContractController extends Controller
         protected ErpNumberSequenceService $numberSequenceService,
         protected ErpProcessService $processService,
         protected ErpProcessEventService $processEventService,
+        protected ErpContractorDocumentService $contractorDocumentService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -53,13 +56,17 @@ class ErpContractController extends Controller
             'erp_contract_payment_method' => ['nullable', 'string', 'max:120'],
             'erp_contract_supervisor_workspace_user_id' => ['nullable', 'integer', 'min:1'],
             'erp_contract_status' => ['nullable', 'in:draft,contractor_data,documents_uploaded,documentation_review,legal_review,pending_approval,approved,signed,active,closed,cancelled'],
-            'erp_contract_created_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
             'erp_process_priority' => ['nullable', 'in:low,medium,high'],
             'erp_process_assigned_to_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $workspaceUserId = $validated['erp_contract_created_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        $workspaceUserId = currentWorkspaceUserId();
+
+        $contractor = ErpThirdParty::query()->find($validated['erp_contract_contractor_id']);
+
+        if ($contractor instanceof ErpThirdParty) {
+            $this->contractorDocumentService->validateRequiredDocumentsOrFail($contractor);
+        }
 
         $contract = DB::transaction(function () use ($validated, $workspaceUserId): ErpContract {
             $process = $this->processService->createProcessForWorkflow('contracts', [
@@ -130,7 +137,7 @@ class ErpContractController extends Controller
             'erp_process_assigned_to_workspace_user_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ]);
 
-        $workspaceUserId = currentWorkspaceUserId($request, $validated);
+        $workspaceUserId = currentWorkspaceUserId();
         $oldStatus = $contract->erp_contract_status;
 
         DB::transaction(function () use ($validated, $workspaceUserId, $contract, $oldStatus): void {
@@ -191,24 +198,31 @@ class ErpContractController extends Controller
     public function moveStep(Request $request, ErpContract $contract): JsonResponse
     {
         $validated = $request->validate([
-            'erp_workflow_step_slug' => ['required', 'string', 'max:120'],
+            'erp_workflow_step_slug' => ['nullable', 'string', 'max:120'],
         ]);
 
         if (! $contract->process instanceof ErpProcess) {
             return $this->errorResponse('Contract process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        try {
-            $workspaceUserId = currentWorkspaceUserId($request, $validated);
+        $stepSlug = $validated['erp_workflow_step_slug']
+            ?? $this->processService->getNextStepSlug($contract->process);
 
-            DB::transaction(function () use ($contract, $validated, $workspaceUserId): void {
+        if (! $stepSlug) {
+            return $this->errorResponse('No next step available.', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $workspaceUserId = currentWorkspaceUserId();
+
+            DB::transaction(function () use ($contract, $stepSlug, $workspaceUserId): void {
                 $this->processService->moveToStep(
                     process: $contract->process,
-                    stepSlug: $validated['erp_workflow_step_slug'],
+                    stepSlug: $stepSlug,
                     workspaceUserId: $workspaceUserId,
                 );
 
-                $newStatus = $this->mapContractStepToStatus($validated['erp_workflow_step_slug'], $contract->erp_contract_status);
+                $newStatus = $this->mapContractStepToStatus($stepSlug, $contract->erp_contract_status);
 
                 if ($newStatus !== $contract->erp_contract_status) {
                     $oldStatus = $contract->erp_contract_status;
@@ -239,7 +253,7 @@ class ErpContractController extends Controller
             return $this->errorResponse('Contract process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $workspaceUserId = currentWorkspaceUserId($request, $request->all());
+        $workspaceUserId = currentWorkspaceUserId();
 
         DB::transaction(function () use ($contract, $workspaceUserId): void {
             $this->processService->closeProcess($contract->process, $workspaceUserId);

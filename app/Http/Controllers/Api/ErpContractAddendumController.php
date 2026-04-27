@@ -50,13 +50,11 @@ class ErpContractAddendumController extends Controller
             'erp_contract_addendum_new_value' => ['nullable', 'string'],
             'erp_contract_addendum_effective_date' => ['nullable', 'date'],
             'erp_contract_addendum_status' => ['nullable', 'in:draft,supports_uploaded,legal_review,pending_approval,approved,signed,closed,cancelled'],
-            'erp_contract_addendum_created_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
             'erp_process_priority' => ['nullable', 'in:low,medium,high'],
             'erp_process_assigned_to_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $workspaceUserId = $validated['erp_contract_addendum_created_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        $workspaceUserId = currentWorkspaceUserId();
 
         $contractAddendum = DB::transaction(function () use ($validated, $workspaceUserId): ErpContractAddendum {
             $process = $this->processService->createProcessForWorkflow('contract_addendums', [
@@ -121,7 +119,7 @@ class ErpContractAddendumController extends Controller
             'erp_process_assigned_to_workspace_user_id' => ['sometimes', 'nullable', 'integer', 'min:1'],
         ]);
 
-        $workspaceUserId = currentWorkspaceUserId($request, $validated);
+        $workspaceUserId = currentWorkspaceUserId();
         $oldStatus = $contractAddendum->erp_contract_addendum_status;
 
         DB::transaction(function () use ($validated, $workspaceUserId, $contractAddendum, $oldStatus): void {
@@ -185,25 +183,32 @@ class ErpContractAddendumController extends Controller
     public function moveStep(Request $request, ErpContractAddendum $contractAddendum): JsonResponse
     {
         $validated = $request->validate([
-            'erp_workflow_step_slug' => ['required', 'string', 'max:120'],
+            'erp_workflow_step_slug' => ['nullable', 'string', 'max:120'],
         ]);
 
         if (! $contractAddendum->process instanceof ErpProcess) {
             return $this->errorResponse('Contract addendum process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        try {
-            $workspaceUserId = currentWorkspaceUserId($request, $validated);
+        $stepSlug = $validated['erp_workflow_step_slug']
+            ?? $this->processService->getNextStepSlug($contractAddendum->process);
 
-            DB::transaction(function () use ($contractAddendum, $validated, $workspaceUserId): void {
+        if (! $stepSlug) {
+            return $this->errorResponse('No next step available.', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        try {
+            $workspaceUserId = currentWorkspaceUserId();
+
+            DB::transaction(function () use ($contractAddendum, $stepSlug, $workspaceUserId): void {
                 $this->processService->moveToStep(
                     process: $contractAddendum->process,
-                    stepSlug: $validated['erp_workflow_step_slug'],
+                    stepSlug: $stepSlug,
                     workspaceUserId: $workspaceUserId,
                 );
 
                 $newStatus = $this->mapAddendumStepToStatus(
-                    $validated['erp_workflow_step_slug'],
+                    $stepSlug,
                     $contractAddendum->erp_contract_addendum_status
                 );
 
@@ -239,7 +244,7 @@ class ErpContractAddendumController extends Controller
             return $this->errorResponse('Contract addendum process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
-        $workspaceUserId = currentWorkspaceUserId($request, $request->all());
+        $workspaceUserId = currentWorkspaceUserId();
 
         DB::transaction(function () use ($contractAddendum, $workspaceUserId): void {
             $this->processService->closeProcess($contractAddendum->process, $workspaceUserId);

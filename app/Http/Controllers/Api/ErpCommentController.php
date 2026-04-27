@@ -39,11 +39,9 @@ class ErpCommentController extends Controller
             'erp_comment_reference_type' => ['nullable', 'string', 'max:80'],
             'erp_comment_reference_id' => ['nullable', 'integer', 'min:1'],
             'erp_comment_body' => ['required', 'string'],
-            'erp_comment_created_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $validated['erp_comment_created_by_workspace_user_id'] = $validated['erp_comment_created_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        $validated['erp_comment_created_by_workspace_user_id'] = currentWorkspaceUserId();
 
         $comment = ErpComment::query()->create($validated)->load('process');
 

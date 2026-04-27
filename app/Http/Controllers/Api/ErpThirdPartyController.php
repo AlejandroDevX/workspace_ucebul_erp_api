@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ErpThirdParty;
+use App\Services\ErpContractorDocumentService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class ErpThirdPartyController extends Controller
 {
+    public function __construct(
+        protected ErpContractorDocumentService $contractorDocumentService,
+    ) {}
+
     public function index(Request $request): JsonResponse
     {
         $thirdParties = ErpThirdParty::query()
@@ -37,11 +42,9 @@ class ErpThirdPartyController extends Controller
             'erp_third_party_bank_account_type' => ['nullable', 'string', 'max:50'],
             'erp_third_party_bank_account_number' => ['nullable', 'string', 'max:80'],
             'erp_third_party_is_active' => ['nullable', 'boolean'],
-            'erp_third_party_created_by_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $validated['erp_third_party_created_by_workspace_user_id'] = $validated['erp_third_party_created_by_workspace_user_id']
-            ?? currentWorkspaceUserId($request, $validated);
+        $validated['erp_third_party_created_by_workspace_user_id'] = currentWorkspaceUserId();
 
         $thirdParty = ErpThirdParty::query()->create($validated);
 
@@ -79,5 +82,63 @@ class ErpThirdPartyController extends Controller
         $thirdParty->delete();
 
         return $this->successResponse(null, 'ERP third party deleted successfully');
+    }
+
+    public function requiredDocumentsStatus(ErpThirdParty $thirdParty): JsonResponse
+    {
+        $status = $this->contractorDocumentService->getRequiredDocumentsStatus($thirdParty);
+
+        return $this->successResponse($status, 'Third party required documents status retrieved successfully');
+    }
+
+    public function uploadRequiredDocument(Request $request, ErpThirdParty $thirdParty, string $documentType): JsonResponse
+    {
+        $allowedTypes = array_keys($this->contractorDocumentService->requiredDocumentTypes());
+
+        $request->validate([
+            'file' => ['required', 'file', 'mimes:pdf', 'max:10240'],
+        ]);
+
+        if (! in_array($documentType, $allowedTypes, strict: true)) {
+            return $this->errorResponse(
+                "Invalid document type '{$documentType}'.",
+                [],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $document = $this->contractorDocumentService->uploadRequiredDocument(
+            thirdParty: $thirdParty,
+            documentType: $documentType,
+            file: $request->file('file'),
+            workspaceUserId: currentWorkspaceUserId(),
+        );
+
+        $status = $this->contractorDocumentService->getRequiredDocumentsStatus($thirdParty);
+
+        return $this->successResponse(
+            ['document' => $document, 'required_documents_status' => $status],
+            'Contractor document uploaded successfully',
+            Response::HTTP_CREATED,
+        );
+    }
+
+    public function deleteRequiredDocument(ErpThirdParty $thirdParty, string $documentType): JsonResponse
+    {
+        $allowedTypes = array_keys($this->contractorDocumentService->requiredDocumentTypes());
+
+        if (! in_array($documentType, $allowedTypes, strict: true)) {
+            return $this->errorResponse(
+                "Invalid document type '{$documentType}'.",
+                [],
+                Response::HTTP_UNPROCESSABLE_ENTITY
+            );
+        }
+
+        $this->contractorDocumentService->deleteRequiredDocument($thirdParty, $documentType);
+
+        $status = $this->contractorDocumentService->getRequiredDocumentsStatus($thirdParty);
+
+        return $this->successResponse($status, 'Contractor document deleted successfully');
     }
 }
