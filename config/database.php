@@ -59,6 +59,22 @@ return [
             'prefix_indexes' => true,
             'strict' => true,
             'engine' => null,
+
+        ],
+
+        'workspace' => [
+            'driver' => 'mysql',
+            'host' => env('WORKSPACE_DB_HOST', env('DB_HOST', '127.0.0.1')),
+            'port' => env('WORKSPACE_DB_PORT', env('DB_PORT', '3306')),
+            'database' => env('WORKSPACE_DB_DATABASE', 'ucebul_workspace'),
+            'username' => env('WORKSPACE_DB_USERNAME', env('DB_USERNAME', 'root')),
+            'password' => env('WORKSPACE_DB_PASSWORD', env('DB_PASSWORD', '')),
+            'charset' => 'utf8mb4',
+            'collation' => 'utf8mb4_general_ci',
+            'prefix' => '',
+            'prefix_indexes' => true,
+            'strict' => true,
+            'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
                 (PHP_VERSION_ID >= 80500 ? Mysql::ATTR_SSL_CA : PDO::MYSQL_ATTR_SSL_CA) => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],

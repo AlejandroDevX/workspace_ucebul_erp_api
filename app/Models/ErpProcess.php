@@ -32,6 +32,9 @@ class ErpProcess extends Model
         'erp_process_assigned_to_workspace_user_id',
         'erp_process_started_at',
         'erp_process_closed_at',
+        'erp_process_current_responsible_role_name',
+        'erp_process_last_moved_by_workspace_user_id',
+        'erp_process_last_moved_at',
     ];
 
     protected function casts(): array
@@ -39,6 +42,7 @@ class ErpProcess extends Model
         return [
             'erp_process_started_at' => 'datetime',
             'erp_process_closed_at' => 'datetime',
+            'erp_process_last_moved_at' => 'datetime',
         ];
     }
 
@@ -82,5 +86,15 @@ class ErpProcess extends Model
     {
         return $this->hasMany(ErpComment::class, 'erp_comment_process_id', 'erp_process_id')
             ->orderByDesc('erp_comment_created_at');
+    }
+
+    public function notifications(): HasMany
+    {
+        return $this->hasMany(ErpNotification::class, 'erp_notification_process_id', 'erp_process_id');
+    }
+
+    public function signatureRequests(): HasMany
+    {
+        return $this->hasMany(ErpExternalSignatureRequest::class, 'erp_external_signature_request_process_id', 'erp_process_id');
     }
 }

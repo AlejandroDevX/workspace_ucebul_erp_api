@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ErpContractAddendum;
 use App\Models\ErpProcess;
+use App\Services\ErpExternalSignatureService;
+use App\Services\ErpNotificationService;
 use App\Services\ErpNumberSequenceService;
 use App\Services\ErpProcessEventService;
 use App\Services\ErpProcessService;
@@ -19,6 +21,8 @@ class ErpContractAddendumController extends Controller
         protected ErpNumberSequenceService $numberSequenceService,
         protected ErpProcessService $processService,
         protected ErpProcessEventService $processEventService,
+        protected ErpExternalSignatureService $signatureService,
+        protected ErpNotificationService $notificationService,
     ) {}
 
     public function index(Request $request): JsonResponse
@@ -32,6 +36,24 @@ class ErpContractAddendumController extends Controller
             ->when(
                 $request->filled('erp_contract_addendum_contract_id'),
                 fn ($query) => $query->where('erp_contract_addendum_contract_id', $request->integer('erp_contract_addendum_contract_id'))
+            )
+            ->when(
+                $request->boolean('my_tasks'),
+                function ($query) {
+                    $userId = currentWorkspaceUserId();
+                    $roleSlug = currentWorkspaceUserRoleSlug();
+
+                    $query->whereHas('process', function ($q) use ($userId, $roleSlug) {
+                        $q->where(function ($inner) use ($userId, $roleSlug) {
+                            if ($userId) {
+                                $inner->orWhere('erp_process_assigned_to_workspace_user_id', $userId);
+                            }
+                            if ($roleSlug) {
+                                $inner->orWhere('erp_process_current_responsible_role_name', $roleSlug);
+                            }
+                        })->whereNotIn('erp_process_status', ['closed', 'cancelled']);
+                    });
+                }
             )
             ->orderByDesc('erp_contract_addendum_id')
             ->get();
@@ -62,7 +84,7 @@ class ErpContractAddendumController extends Controller
                 'erp_process_description' => $validated['erp_contract_addendum_description'],
                 'erp_process_priority' => $validated['erp_process_priority'] ?? 'medium',
                 'erp_process_created_by_workspace_user_id' => $workspaceUserId,
-                'erp_process_assigned_to_workspace_user_id' => $validated['erp_process_assigned_to_workspace_user_id'] ?? null,
+                'erp_process_assigned_to_workspace_user_id' => null,
             ]);
 
             $contractAddendum = ErpContractAddendum::query()->create([
@@ -75,20 +97,27 @@ class ErpContractAddendumController extends Controller
                 'erp_contract_addendum_previous_value' => $validated['erp_contract_addendum_previous_value'] ?? null,
                 'erp_contract_addendum_new_value' => $validated['erp_contract_addendum_new_value'] ?? null,
                 'erp_contract_addendum_effective_date' => $validated['erp_contract_addendum_effective_date'] ?? null,
-                'erp_contract_addendum_status' => $validated['erp_contract_addendum_status'] ?? 'draft',
+                'erp_contract_addendum_status' => 'draft',
                 'erp_contract_addendum_created_by_workspace_user_id' => $workspaceUserId,
-            ]);
-
-            $process->update([
-                'erp_process_status' => $this->mapAddendumStatusToProcessStatus($contractAddendum->erp_contract_addendum_status),
             ]);
 
             $this->processEventService->logCreated(
                 process: $process->fresh(),
-                title: "Contract addendum {$contractAddendum->erp_contract_addendum_code} created",
+                title: "Otrosí {$contractAddendum->erp_contract_addendum_code} creado",
                 description: $contractAddendum->erp_contract_addendum_title,
                 workspaceUserId: $workspaceUserId,
             );
+
+            // Step 1 completed by creation — auto-advance to administrative_review.
+            $this->processService->moveToStep(
+                process: $process->fresh(),
+                stepSlug: 'administrative_review',
+                workspaceUserId: $workspaceUserId,
+                referenceType: 'contract_addendum',
+                referenceId: $contractAddendum->erp_contract_addendum_id,
+            );
+
+            $contractAddendum->update(['erp_contract_addendum_status' => 'administrative_review']);
 
             return $contractAddendum;
         });
@@ -184,6 +213,7 @@ class ErpContractAddendumController extends Controller
     {
         $validated = $request->validate([
             'erp_workflow_step_slug' => ['nullable', 'string', 'max:120'],
+            'erp_process_assigned_to_workspace_user_id' => ['nullable', 'integer', 'min:1'],
         ]);
 
         if (! $contractAddendum->process instanceof ErpProcess) {
@@ -200,11 +230,19 @@ class ErpContractAddendumController extends Controller
         try {
             $workspaceUserId = currentWorkspaceUserId();
 
-            DB::transaction(function () use ($contractAddendum, $stepSlug, $workspaceUserId): void {
+            DB::transaction(function () use ($contractAddendum, $stepSlug, $workspaceUserId, $validated): void {
+                if (isset($validated['erp_process_assigned_to_workspace_user_id'])) {
+                    $contractAddendum->process->update([
+                        'erp_process_assigned_to_workspace_user_id' => $validated['erp_process_assigned_to_workspace_user_id'],
+                    ]);
+                }
+
                 $this->processService->moveToStep(
-                    process: $contractAddendum->process,
+                    process: $contractAddendum->process->fresh(),
                     stepSlug: $stepSlug,
                     workspaceUserId: $workspaceUserId,
+                    referenceType: 'contract_addendum',
+                    referenceId: $contractAddendum->erp_contract_addendum_id,
                 );
 
                 $newStatus = $this->mapAddendumStepToStatus(
@@ -238,7 +276,7 @@ class ErpContractAddendumController extends Controller
         );
     }
 
-    public function close(Request $request, ErpContractAddendum $contractAddendum): JsonResponse
+    public function close(ErpContractAddendum $contractAddendum): JsonResponse
     {
         if (! $contractAddendum->process instanceof ErpProcess) {
             return $this->errorResponse('Contract addendum process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
@@ -272,22 +310,80 @@ class ErpContractAddendumController extends Controller
         );
     }
 
+    public function requestSignature(Request $request, ErpContractAddendum $contractAddendum): JsonResponse
+    {
+        if (! $contractAddendum->process instanceof ErpProcess) {
+            return $this->errorResponse('Contract addendum process not found', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $validated = $request->validate([
+            'erp_external_signature_request_document_id' => ['nullable', 'integer', 'exists:erp_documents,erp_document_id'],
+            'erp_external_signature_request_expires_in_days' => ['nullable', 'integer', 'min:1', 'max:90'],
+        ]);
+
+        $contractAddendum->loadMissing('contract.contractor');
+        $contractor = $contractAddendum->contract?->contractor;
+
+        if (! $contractor) {
+            return $this->errorResponse('Contract has no contractor', [], Response::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $workspaceUserId = currentWorkspaceUserId();
+
+        $signatureRequest = $this->signatureService->createSignatureRequest(
+            process: $contractAddendum->process,
+            referenceType: 'contract_addendum',
+            referenceId: $contractAddendum->erp_contract_addendum_id,
+            thirdPartyId: $contractor->erp_third_party_id,
+            documentId: $validated['erp_external_signature_request_document_id'] ?? null,
+            signerName: $contractor->erp_third_party_name,
+            signerEmail: $contractor->erp_third_party_email,
+            signerDocumentNumber: $contractor->erp_third_party_document_number,
+            createdByWorkspaceUserId: $workspaceUserId,
+            expiresInDays: $validated['erp_external_signature_request_expires_in_days'] ?? 7,
+        );
+
+        if ($workspaceUserId) {
+            $this->notificationService->notifySignatureRequested(
+                workspaceUserId: $workspaceUserId,
+                process: $contractAddendum->process,
+                signerName: $contractor->erp_third_party_name,
+                referenceType: 'contract_addendum',
+                referenceId: $contractAddendum->erp_contract_addendum_id,
+                createdByWorkspaceUserId: $workspaceUserId,
+            );
+        }
+
+        return $this->successResponse($signatureRequest, 'Signature request created successfully', Response::HTTP_CREATED);
+    }
+
     protected function loadContractAddendum(ErpContractAddendum $contractAddendum): ErpContractAddendum
     {
         return $contractAddendum->load([
             'contract',
+            'pdfDocument',
+            'signedPdfDocument',
             'process.workflow',
             'process.currentStep',
+            'process.workflow.steps' => fn ($q) => $q->where('erp_workflow_step_is_active', true)->orderBy('erp_workflow_step_order'),
             'process.documents',
             'process.approvals',
             'process.events',
             'process.comments',
+            'process.signatureRequests',
         ]);
     }
 
     protected function mapAddendumStepToStatus(string $stepSlug, string $currentStatus): string
     {
         return match ($stepSlug) {
+            'coordinator_creation' => 'draft',
+            'administrative_review' => 'administrative_review',
+            'legal_review' => 'legal_review',
+            'direction_approval' => 'direction_review',
+            'contractor_signature' => 'pending_signature',
+            'coordinator_close' => 'signed',
+            // legacy slugs
             'upload_supports' => 'supports_uploaded',
             'legal_preparation' => 'legal_review',
             'approval' => 'pending_approval',

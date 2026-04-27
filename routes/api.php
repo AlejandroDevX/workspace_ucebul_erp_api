@@ -5,9 +5,18 @@ use App\Http\Controllers\Api\ErpCommentController;
 use App\Http\Controllers\Api\ErpContractAddendumController;
 use App\Http\Controllers\Api\ErpContractController;
 use App\Http\Controllers\Api\ErpDocumentController;
+use App\Http\Controllers\Api\ErpNotificationController;
+use App\Http\Controllers\Api\ErpPublicSignatureController;
 use App\Http\Controllers\Api\ErpThirdPartyController;
 use App\Http\Controllers\Api\ErpWorkflowController;
+use App\Http\Controllers\Api\ErpWorkspaceUserController;
 use Illuminate\Support\Facades\Route;
+
+// Public signature routes (no auth required)
+Route::prefix('erp/public')->group(function () {
+    Route::get('sign/{token}', [ErpPublicSignatureController::class, 'show']);
+    Route::post('sign/{token}', [ErpPublicSignatureController::class, 'sign']);
+});
 
 Route::prefix('erp')->middleware('workspace.auth')->group(function () {
     // Third Parties
@@ -30,6 +39,7 @@ Route::prefix('erp')->middleware('workspace.auth')->group(function () {
     Route::delete('contracts/{contract}', [ErpContractController::class, 'destroy'])->middleware('workspace.permission:erp.contracts.delete');
     Route::post('contracts/{contract}/move-step', [ErpContractController::class, 'moveStep'])->middleware('workspace.permission:erp.contracts.move_step');
     Route::post('contracts/{contract}/close', [ErpContractController::class, 'close'])->middleware('workspace.permission:erp.contracts.close');
+    Route::post('contracts/{contract}/request-signature', [ErpContractController::class, 'requestSignature'])->middleware('workspace.permission:erp.contracts.move_step');
 
     // Contract Addendums
     Route::get('contract-addendums', [ErpContractAddendumController::class, 'index'])->middleware('workspace.permission:erp.contract_addendums.view');
@@ -40,6 +50,7 @@ Route::prefix('erp')->middleware('workspace.auth')->group(function () {
     Route::delete('contract-addendums/{contract_addendum}', [ErpContractAddendumController::class, 'destroy'])->middleware('workspace.permission:erp.contract_addendums.delete');
     Route::post('contract-addendums/{contract_addendum}/move-step', [ErpContractAddendumController::class, 'moveStep'])->middleware('workspace.permission:erp.contract_addendums.move_step');
     Route::post('contract-addendums/{contract_addendum}/close', [ErpContractAddendumController::class, 'close'])->middleware('workspace.permission:erp.contract_addendums.close');
+    Route::post('contract-addendums/{contract_addendum}/request-signature', [ErpContractAddendumController::class, 'requestSignature'])->middleware('workspace.permission:erp.contract_addendums.move_step');
 
     // Documents
     Route::get('documents', [ErpDocumentController::class, 'index'])->middleware('workspace.permission:erp.documents.view');
@@ -60,4 +71,13 @@ Route::prefix('erp')->middleware('workspace.auth')->group(function () {
     // Workflows (read-only)
     Route::get('workflows', [ErpWorkflowController::class, 'index'])->middleware('workspace.permission:erp.workflows.view');
     Route::get('workflows/{workflow}', [ErpWorkflowController::class, 'show'])->middleware('workspace.permission:erp.workflows.view');
+
+    // Workspace users (for step assignment)
+    Route::get('workspace-users', [ErpWorkspaceUserController::class, 'index']);
+
+    // Notifications
+    Route::get('notifications', [ErpNotificationController::class, 'index']);
+    Route::get('notifications/unread-count', [ErpNotificationController::class, 'unreadCount']);
+    Route::post('notifications/{notification}/read', [ErpNotificationController::class, 'markRead']);
+    Route::post('notifications/read-all', [ErpNotificationController::class, 'markAllRead']);
 });

@@ -13,6 +13,7 @@ class ErpProcessService
     public function __construct(
         protected ErpNumberSequenceService $numberSequenceService,
         protected ErpProcessEventService $processEventService,
+        protected ErpNotificationService $notificationService,
     ) {}
 
     public function createProcessForWorkflow(string $workflowSlug, array $data): ErpProcess
@@ -54,8 +55,13 @@ class ErpProcessService
         return $process->load(['workflow', 'currentStep']);
     }
 
-    public function moveToStep(ErpProcess $process, string $stepSlug, ?int $workspaceUserId = null): ErpProcess
-    {
+    public function moveToStep(
+        ErpProcess $process,
+        string $stepSlug,
+        ?int $workspaceUserId = null,
+        ?string $referenceType = null,
+        ?int $referenceId = null,
+    ): ErpProcess {
         $step = ErpWorkflowStep::query()
             ->where('erp_workflow_step_workflow_id', $process->erp_process_workflow_id)
             ->where('erp_workflow_step_slug', $stepSlug)
@@ -72,6 +78,9 @@ class ErpProcessService
         $process->fill([
             'erp_process_current_step_id' => $step->erp_workflow_step_id,
             'erp_process_status' => $newStatus,
+            'erp_process_current_responsible_role_name' => $step->erp_workflow_step_responsible_role_name,
+            'erp_process_last_moved_by_workspace_user_id' => $workspaceUserId,
+            'erp_process_last_moved_at' => Carbon::now(),
         ]);
 
         if ($newStatus === 'closed') {
@@ -87,6 +96,14 @@ class ErpProcessService
             newStatus: $newStatus,
             description: $step->erp_workflow_step_description,
             workspaceUserId: $workspaceUserId,
+        );
+
+        $this->notificationService->notifyProcessMoved(
+            process: $process,
+            toStep: $step,
+            movedByWorkspaceUserId: $workspaceUserId,
+            referenceType: $referenceType,
+            referenceId: $referenceId,
         );
 
         return $process->load(['workflow', 'currentStep']);

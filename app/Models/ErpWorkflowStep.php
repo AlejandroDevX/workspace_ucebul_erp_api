@@ -29,6 +29,7 @@ class ErpWorkflowStep extends Model
         'erp_workflow_step_requires_approval',
         'erp_workflow_step_is_final',
         'erp_workflow_step_is_active',
+        'erp_workflow_step_requires_external_signature',
     ];
 
     protected function casts(): array
@@ -38,6 +39,7 @@ class ErpWorkflowStep extends Model
             'erp_workflow_step_requires_approval' => 'boolean',
             'erp_workflow_step_is_final' => 'boolean',
             'erp_workflow_step_is_active' => 'boolean',
+            'erp_workflow_step_requires_external_signature' => 'boolean',
         ];
     }
 

@@ -26,6 +26,11 @@ class ErpProcessEvent extends Model
         'erp_process_event_description',
         'erp_process_event_old_status',
         'erp_process_event_new_status',
+        'erp_process_event_from_step_id',
+        'erp_process_event_to_step_id',
+        'erp_process_event_from_workspace_user_id',
+        'erp_process_event_to_workspace_user_id',
+        'erp_process_event_to_role_name',
         'erp_process_event_created_by_workspace_user_id',
     ];
 

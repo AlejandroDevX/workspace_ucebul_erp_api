@@ -20,15 +20,50 @@ class ErpWorkflowSeeder extends Seeder
                 'erp_workflow_slug' => 'contracts',
                 'erp_workflow_description' => 'Flujo principal para contratos',
                 'steps' => [
-                    ['name' => 'Crear solicitud', 'slug' => 'create_request', 'role' => 'Coordinador', 'order' => 1],
-                    ['name' => 'Ingresar datos contratista', 'slug' => 'contractor_data', 'role' => 'Coordinador', 'order' => 2],
-                    ['name' => 'Adjuntar documentos', 'slug' => 'upload_documents', 'role' => 'Coordinador', 'order' => 3],
-                    ['name' => 'Revisar documentación', 'slug' => 'documentation_review', 'role' => 'Administrativo', 'order' => 4, 'requires_approval' => true],
-                    ['name' => 'Elaborar o cargar contrato', 'slug' => 'prepare_contract', 'role' => 'Jurídica', 'order' => 5],
-                    ['name' => 'Aprobar dirección', 'slug' => 'direction_approval', 'role' => 'Dirección administrativa y financiera', 'order' => 6, 'requires_approval' => true],
-                    ['name' => 'Firma contratista', 'slug' => 'contractor_signature', 'role' => 'Contratista', 'order' => 7],
-                    ['name' => 'Cargar contrato firmado', 'slug' => 'upload_signed_contract', 'role' => 'Coordinador', 'order' => 8],
-                    ['name' => 'Proceso cerrado', 'slug' => 'closed', 'role' => 'Administrativo', 'order' => 9, 'is_final' => true],
+                    [
+                        'name' => 'Creación por coordinador',
+                        'slug' => 'coordinator_creation',
+                        'role' => 'coordinator',
+                        'order' => 1,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Revisión administrativa',
+                        'slug' => 'administrative_review',
+                        'role' => 'administrative',
+                        'order' => 2,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Revisión jurídica',
+                        'slug' => 'legal_review',
+                        'role' => 'legal',
+                        'order' => 3,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Aprobación dirección',
+                        'slug' => 'direction_approval',
+                        'role' => 'administrative_financial_direction',
+                        'order' => 4,
+                        'requires_approval' => true,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Firma contratista',
+                        'slug' => 'contractor_signature',
+                        'role' => 'coordinator',
+                        'order' => 5,
+                        'requires_external_signature' => true,
+                    ],
+                    [
+                        'name' => 'Cierre coordinador',
+                        'slug' => 'coordinator_close',
+                        'role' => 'coordinator',
+                        'order' => 6,
+                        'is_final' => true,
+                        'requires_external_signature' => false,
+                    ],
                 ],
             ],
             [
@@ -36,14 +71,50 @@ class ErpWorkflowSeeder extends Seeder
                 'erp_workflow_slug' => 'contract_addendums',
                 'erp_workflow_description' => 'Flujo principal para otrosíes de contrato',
                 'steps' => [
-                    ['name' => 'Buscar contrato existente', 'slug' => 'find_contract', 'role' => 'Coordinador', 'order' => 1],
-                    ['name' => 'Seleccionar tipo de modificación', 'slug' => 'select_addendum_type', 'role' => 'Coordinador', 'order' => 2],
-                    ['name' => 'Diligenciar cambios', 'slug' => 'fill_changes', 'role' => 'Coordinador', 'order' => 3],
-                    ['name' => 'Adjuntar soportes', 'slug' => 'upload_supports', 'role' => 'Coordinador', 'order' => 4],
-                    ['name' => 'Elaboración jurídica', 'slug' => 'legal_preparation', 'role' => 'Jurídica', 'order' => 5],
-                    ['name' => 'Aprobación', 'slug' => 'approval', 'role' => 'Dirección administrativa y financiera', 'order' => 6, 'requires_approval' => true],
-                    ['name' => 'Firma', 'slug' => 'signature', 'role' => 'Coordinador', 'order' => 7],
-                    ['name' => 'Cierre', 'slug' => 'closed', 'role' => 'Administrativo', 'order' => 8, 'is_final' => true],
+                    [
+                        'name' => 'Creación por coordinador',
+                        'slug' => 'coordinator_creation',
+                        'role' => 'coordinator',
+                        'order' => 1,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Revisión administrativa',
+                        'slug' => 'administrative_review',
+                        'role' => 'administrative',
+                        'order' => 2,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Revisión jurídica',
+                        'slug' => 'legal_review',
+                        'role' => 'legal',
+                        'order' => 3,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Aprobación dirección',
+                        'slug' => 'direction_approval',
+                        'role' => 'administrative_financial_direction',
+                        'order' => 4,
+                        'requires_approval' => true,
+                        'requires_external_signature' => false,
+                    ],
+                    [
+                        'name' => 'Firma contratista',
+                        'slug' => 'contractor_signature',
+                        'role' => 'coordinator',
+                        'order' => 5,
+                        'requires_external_signature' => true,
+                    ],
+                    [
+                        'name' => 'Cierre coordinador',
+                        'slug' => 'coordinator_close',
+                        'role' => 'coordinator',
+                        'order' => 6,
+                        'is_final' => true,
+                        'requires_external_signature' => false,
+                    ],
                 ],
             ],
         ];
@@ -57,6 +128,14 @@ class ErpWorkflowSeeder extends Seeder
                     'erp_workflow_is_active' => true,
                 ],
             );
+
+            $newSlugs = array_column($workflowData['steps'], 'slug');
+
+            // Deactivate old steps not in the new workflow
+            ErpWorkflowStep::query()
+                ->where('erp_workflow_step_workflow_id', $workflow->erp_workflow_id)
+                ->whereNotIn('erp_workflow_step_slug', $newSlugs)
+                ->update(['erp_workflow_step_is_active' => false]);
 
             foreach ($workflowData['steps'] as $stepData) {
                 ErpWorkflowStep::query()->updateOrCreate(
@@ -72,6 +151,7 @@ class ErpWorkflowSeeder extends Seeder
                         'erp_workflow_step_requires_approval' => $stepData['requires_approval'] ?? false,
                         'erp_workflow_step_is_final' => $stepData['is_final'] ?? false,
                         'erp_workflow_step_is_active' => true,
+                        'erp_workflow_step_requires_external_signature' => $stepData['requires_external_signature'] ?? false,
                     ],
                 );
             }

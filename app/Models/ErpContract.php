@@ -33,6 +33,8 @@ class ErpContract extends Model
         'erp_contract_payment_method',
         'erp_contract_supervisor_workspace_user_id',
         'erp_contract_status',
+        'erp_contract_pdf_document_id',
+        'erp_contract_signed_pdf_document_id',
         'erp_contract_created_by_workspace_user_id',
     ];
 
@@ -63,5 +65,15 @@ class ErpContract extends Model
     public function addendums(): HasMany
     {
         return $this->hasMany(ErpContractAddendum::class, 'erp_contract_addendum_contract_id', 'erp_contract_id');
+    }
+
+    public function pdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(ErpDocument::class, 'erp_contract_pdf_document_id', 'erp_document_id');
+    }
+
+    public function signedPdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(ErpDocument::class, 'erp_contract_signed_pdf_document_id', 'erp_document_id');
     }
 }

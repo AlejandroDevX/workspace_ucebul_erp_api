@@ -29,6 +29,8 @@ class ErpContractAddendum extends Model
         'erp_contract_addendum_new_value',
         'erp_contract_addendum_effective_date',
         'erp_contract_addendum_status',
+        'erp_contract_addendum_pdf_document_id',
+        'erp_contract_addendum_signed_pdf_document_id',
         'erp_contract_addendum_created_by_workspace_user_id',
     ];
 
@@ -47,5 +49,15 @@ class ErpContractAddendum extends Model
     public function contract(): BelongsTo
     {
         return $this->belongsTo(ErpContract::class, 'erp_contract_addendum_contract_id', 'erp_contract_id');
+    }
+
+    public function pdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(ErpDocument::class, 'erp_contract_addendum_pdf_document_id', 'erp_document_id');
+    }
+
+    public function signedPdfDocument(): BelongsTo
+    {
+        return $this->belongsTo(ErpDocument::class, 'erp_contract_addendum_signed_pdf_document_id', 'erp_document_id');
     }
 }
