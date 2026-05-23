@@ -47,7 +47,7 @@ class ErpProcessService
 
         $this->processEventService->logCreated(
             process: $process,
-            title: "Process created for workflow {$workflow->erp_workflow_name}",
+            title: "Proceso creado en flujo: {$workflow->erp_workflow_name}",
             description: $process->erp_process_title,
             workspaceUserId: $data['erp_process_created_by_workspace_user_id'] ?? null,
         );
@@ -91,7 +91,7 @@ class ErpProcessService
 
         $this->processEventService->logStatusChanged(
             process: $process,
-            title: "Process moved to step {$step->erp_workflow_step_name}",
+            title: "Proceso avanzó a: {$step->erp_workflow_step_name}",
             oldStatus: $oldStatus,
             newStatus: $newStatus,
             description: $step->erp_workflow_step_description,
@@ -129,7 +129,7 @@ class ErpProcessService
 
         $this->processEventService->logStatusChanged(
             process: $process,
-            title: 'Process closed',
+            title: 'Proceso cerrado',
             oldStatus: $oldStatus,
             newStatus: 'closed',
             workspaceUserId: $workspaceUserId,

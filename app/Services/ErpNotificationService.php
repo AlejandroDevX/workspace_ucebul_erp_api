@@ -67,6 +67,23 @@ class ErpNotificationService
         ?string $referenceType = null,
         ?int $referenceId = null,
     ): void {
+        $assignedUserId = $process->erp_process_assigned_to_workspace_user_id;
+
+        if ($assignedUserId) {
+            $this->notifyUser(
+                workspaceUserId: (int) $assignedUserId,
+                type: 'process_moved',
+                title: "Proceso asignado: {$toStep->erp_workflow_step_name}",
+                message: 'Se te ha asignado un proceso.',
+                process: $process,
+                referenceType: $referenceType,
+                referenceId: $referenceId,
+                createdByWorkspaceUserId: $movedByWorkspaceUserId,
+            );
+
+            return;
+        }
+
         $responsibleRole = $toStep->erp_workflow_step_responsible_role_name;
 
         if ($responsibleRole) {
@@ -109,10 +126,24 @@ class ErpNotificationService
         ?string $referenceType = null,
         ?int $referenceId = null,
     ): void {
-        $coordinatorRole = 'coordinator';
+        $assignedUserId = $process->erp_process_assigned_to_workspace_user_id;
+
+        if ($assignedUserId) {
+            $this->notifyUser(
+                workspaceUserId: (int) $assignedUserId,
+                type: 'signature_completed',
+                title: 'Firma completada',
+                message: "{$signerName} ha completado la firma del documento.",
+                process: $process,
+                referenceType: $referenceType,
+                referenceId: $referenceId,
+            );
+
+            return;
+        }
 
         $this->notifyRole(
-            roleName: $coordinatorRole,
+            roleName: 'coordinator',
             type: 'signature_completed',
             title: 'Firma completada',
             message: "{$signerName} ha completado la firma del documento.",

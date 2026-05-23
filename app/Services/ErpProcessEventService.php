@@ -65,7 +65,7 @@ class ErpProcessEventService
         return $this->createEvent(
             process: $process,
             type: 'document_uploaded',
-            title: "Document uploaded: {$documentName}",
+            title: "Documento cargado: {$documentName}",
             description: $description,
             workspaceUserId: $workspaceUserId,
         );
@@ -77,10 +77,16 @@ class ErpProcessEventService
         ?int $workspaceUserId = null,
         ?string $comment = null,
     ): ErpProcessEvent {
+        $statusLabel = match ($status) {
+            'approved' => 'aprobado',
+            'rejected' => 'rechazado',
+            default => $status,
+        };
+
         return $this->createEvent(
             process: $process,
             type: 'approval_resolved',
-            title: "Approval {$status}",
+            title: "Aprobación {$statusLabel}",
             description: $comment,
             workspaceUserId: $workspaceUserId,
         );

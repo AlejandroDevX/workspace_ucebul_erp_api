@@ -163,7 +163,7 @@ class ErpContractAddendumController extends Controller
             if ($contractAddendum->process instanceof ErpProcess) {
                 $this->processEventService->logUpdated(
                     process: $contractAddendum->process,
-                    title: "Contract addendum {$contractAddendum->erp_contract_addendum_code} updated",
+                    title: "Otrosí {$contractAddendum->erp_contract_addendum_code} actualizado",
                     description: $contractAddendum->erp_contract_addendum_title,
                     workspaceUserId: $workspaceUserId,
                 );
@@ -177,7 +177,7 @@ class ErpContractAddendumController extends Controller
 
                     $this->processEventService->logStatusChanged(
                         process: $contractAddendum->process->fresh(),
-                        title: "Contract addendum status changed to {$validated['erp_contract_addendum_status']}",
+                        title: 'Estado del otrosí actualizado',
                         oldStatus: $oldStatus,
                         newStatus: $validated['erp_contract_addendum_status'],
                         workspaceUserId: $workspaceUserId,
@@ -259,7 +259,7 @@ class ErpContractAddendumController extends Controller
 
                     $this->processEventService->logStatusChanged(
                         process: $contractAddendum->process->fresh(),
-                        title: "Contract addendum status changed to {$newStatus}",
+                        title: 'Estado del otrosí actualizado',
                         oldStatus: $oldStatus,
                         newStatus: $newStatus,
                         workspaceUserId: $workspaceUserId,
@@ -296,7 +296,7 @@ class ErpContractAddendumController extends Controller
 
                 $this->processEventService->logStatusChanged(
                     process: $contractAddendum->process->fresh(),
-                    title: 'Contract addendum status changed to closed',
+                    title: 'Otrosí cerrado',
                     oldStatus: $oldStatus,
                     newStatus: 'closed',
                     workspaceUserId: $workspaceUserId,

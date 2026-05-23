@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\ErpApproval;
 use App\Models\ErpContract;
 use App\Models\ErpProcess;
 use App\Models\ErpThirdParty;
+use App\Models\ErpWorkflowStep;
 use App\Services\ErpContractorDocumentService;
 use App\Services\ErpExternalSignatureService;
 use App\Services\ErpNotificationService;
@@ -14,6 +16,7 @@ use App\Services\ErpProcessEventService;
 use App\Services\ErpProcessService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -182,7 +185,7 @@ class ErpContractController extends Controller
             if ($contract->process instanceof ErpProcess) {
                 $this->processEventService->logUpdated(
                     process: $contract->process,
-                    title: "Contract {$contract->erp_contract_code} updated",
+                    title: "Contrato {$contract->erp_contract_code} actualizado",
                     description: $contract->erp_contract_title,
                     workspaceUserId: $workspaceUserId,
                 );
@@ -196,7 +199,7 @@ class ErpContractController extends Controller
 
                     $this->processEventService->logStatusChanged(
                         process: $contract->process->fresh(),
-                        title: "Contract status changed to {$validated['erp_contract_status']}",
+                        title: 'Estado del contrato actualizado',
                         oldStatus: $oldStatus,
                         newStatus: $validated['erp_contract_status'],
                         workspaceUserId: $workspaceUserId,
@@ -253,6 +256,24 @@ class ErpContractController extends Controller
                     ]);
                 }
 
+                $contract->process->loadMissing('currentStep');
+                $currentStep = $contract->process->currentStep;
+
+                if ($currentStep instanceof ErpWorkflowStep &&
+                    $currentStep->erp_workflow_step_slug === 'direction_approval') {
+                    ErpApproval::query()->create([
+                        'erp_approval_process_id' => $contract->process->erp_process_id,
+                        'erp_approval_step_id' => $currentStep->erp_workflow_step_id,
+                        'erp_approval_reference_type' => 'contract',
+                        'erp_approval_reference_id' => $contract->erp_contract_id,
+                        'erp_approval_status' => 'approved',
+                        'erp_approval_requested_by_workspace_user_id' => $workspaceUserId,
+                        'erp_approval_approved_by_workspace_user_id' => $workspaceUserId,
+                        'erp_approval_requested_at' => Carbon::now(),
+                        'erp_approval_resolved_at' => Carbon::now(),
+                    ]);
+                }
+
                 $this->processService->moveToStep(
                     process: $contract->process->fresh(),
                     stepSlug: $stepSlug,
@@ -272,7 +293,7 @@ class ErpContractController extends Controller
 
                     $this->processEventService->logStatusChanged(
                         process: $contract->process->fresh(),
-                        title: "Contract status changed to {$newStatus}",
+                        title: 'Estado del contrato actualizado',
                         oldStatus: $oldStatus,
                         newStatus: $newStatus,
                         workspaceUserId: $workspaceUserId,
@@ -306,7 +327,7 @@ class ErpContractController extends Controller
 
                 $this->processEventService->logStatusChanged(
                     process: $contract->process->fresh(),
-                    title: 'Contract status changed to closed',
+                    title: 'Contrato cerrado',
                     oldStatus: $oldStatus,
                     newStatus: 'closed',
                     workspaceUserId: $workspaceUserId,

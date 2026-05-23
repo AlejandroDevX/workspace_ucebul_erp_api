@@ -49,7 +49,7 @@ class ErpPublicSignatureController extends Controller
         }
 
         $validated = $request->validate([
-            'signature_image_url' => ['required', 'string', 'max:1000'],
+            'signature_image_url' => ['required', 'string'],
         ]);
 
         try {

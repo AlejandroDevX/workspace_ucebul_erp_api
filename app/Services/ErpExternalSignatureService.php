@@ -46,10 +46,8 @@ class ErpExternalSignatureService
 
     public function getByToken(string $token): ErpExternalSignatureRequest
     {
-        $tokenHash = hash('sha256', $token);
-
         $request = ErpExternalSignatureRequest::query()
-            ->where('erp_external_signature_request_token_hash', $tokenHash)
+            ->where('erp_external_signature_request_public_token', $token)
             ->with(['document', 'thirdParty'])
             ->first();
 
